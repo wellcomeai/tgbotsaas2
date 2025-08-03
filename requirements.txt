@@ -1,31 +1,27 @@
-# FastAPI и веб-сервер (ОБЯЗАТЕЛЬНО!)
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
+# FastAPI и веб-сервер
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9
 
 # База данных
-sqlalchemy[asyncio]==2.0.23
+sqlalchemy[asyncio]==2.0.31
 asyncpg==0.29.0
-alembic==1.12.1
+alembic==1.13.2
 
 # Telegram
 python-telegram-bot==21.4
 httpx==0.27.0
 
-# Валидация данных
-pydantic==2.5.0
-pydantic-settings==2.1.0
-
-# Безопасность (опционально)
-passlib[bcrypt]==1.7.4
-python-jose[cryptography]==3.3.0
+# Валидация данных (ОБНОВЛЕННЫЕ ВЕРСИИ)
+pydantic==2.8.2
+pydantic-settings==2.3.4
 
 # Утилиты
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 psutil==5.9.8
 
 # Логирование
-structlog==23.2.0
+structlog==24.1.0
 
 # Временные зоны
-pytz==2023.3
+pytz==2024.1
