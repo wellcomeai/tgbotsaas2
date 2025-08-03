@@ -19,7 +19,11 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: MASTER_BOT_TOKEN
-        sync: false  # Установите вручную
+        sync: false  # Установите вручную в панели Render
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bot-factory-db
+          property: connectionString
       - key: POSTGRES_SERVER
         fromDatabase:
           name: bot-factory-db
@@ -38,6 +42,14 @@ services:
           property: database
       - key: POSTGRES_PORT
         value: "5432"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: CELERY_BROKER_URL
+        value: "redis://localhost:6379/0"
+      - key: CELERY_RESULT_BACKEND
+        value: "redis://localhost:6379/0"
+      - key: BACKEND_CORS_ORIGINS
+        value: "https://bot-factory-api.onrender.com,https://localhost:3000"
 
 databases:
   - name: bot-factory-db
