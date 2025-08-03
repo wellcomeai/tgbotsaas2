@@ -38,6 +38,17 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_db_connection(cls, v: Optional[str], info) -> str:
         if isinstance(v, str):
+            # Конвертируем postgres:// или postgresql:// в postgresql+asyncpg://
+            if v.startswith("postgres://"):
+                v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgresql://"):
+                v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif not v.startswith("postgresql+asyncpg://"):
+                # Если схема другая, добавляем asyncpg
+                if "://" in v:
+                    scheme, rest = v.split("://", 1)
+                    v = f"postgresql+asyncpg://{rest}"
+            
             return v
         
         values = info.data if hasattr(info, 'data') else {}
