@@ -4,7 +4,7 @@ User Schemas - Pydantic схемы для пользователей
 
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from app.models.user import User as UserModel
 
 
@@ -52,11 +52,13 @@ class User(UserInDB):
     display_name: str
     is_subscription_active: bool
     
-    @validator("display_name", pre=True, always=True)
-    def set_display_name(cls, v, values):
+    @field_validator("display_name", mode="before")
+    @classmethod
+    def set_display_name(cls, v, info):
         if v:
             return v
         # Calculate display name from other fields
+        values = info.data if hasattr(info, 'data') else {}
         first_name = values.get("first_name")
         last_name = values.get("last_name")
         username = values.get("username")
@@ -71,11 +73,13 @@ class User(UserInDB):
         else:
             return f"User {telegram_id}"
     
-    @validator("is_subscription_active", pre=True, always=True)
-    def set_subscription_active(cls, v, values):
+    @field_validator("is_subscription_active", mode="before")
+    @classmethod
+    def set_subscription_active(cls, v, info):
         if v is not None:
             return v
         # Calculate subscription status
+        values = info.data if hasattr(info, 'data') else {}
         subscription_type = values.get("subscription_type")
         subscription_expires_at = values.get("subscription_expires_at")
         
