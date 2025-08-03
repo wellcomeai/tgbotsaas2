@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, BigIn
 from sqlalchemy.orm import relationship
 from enum import Enum
 from app.models.base import BaseModel
-
+from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, BigInteger, JSON, DateTime, func
 
 class BotStatus(str, Enum):
     """Bot status enumeration"""
