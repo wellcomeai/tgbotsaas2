@@ -1,10 +1,12 @@
 services:
-  # Web сервис
   - type: web
     name: bot-factory-api
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: |
+      pip install --upgrade pip &&
+      pip install -r requirements.txt &&
+      python scripts/migrate.py
+    startCommand: python scripts/start.py
     envVars:
       - key: ENVIRONMENT
         value: production
@@ -14,8 +16,29 @@ services:
         value: "Telegram Bot Factory"
       - key: API_V1_PREFIX
         value: "/api/v1"
-        
-  # База данных
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MASTER_BOT_TOKEN
+        sync: false  # Установите вручную
+      - key: POSTGRES_SERVER
+        fromDatabase:
+          name: bot-factory-db
+          property: host
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: bot-factory-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: bot-factory-db
+          property: password
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: bot-factory-db
+          property: database
+      - key: POSTGRES_PORT
+        value: "5432"
+
 databases:
   - name: bot-factory-db
     databaseName: bot_factory
