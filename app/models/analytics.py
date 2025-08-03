@@ -5,7 +5,7 @@ Analytics Models - модели аналитики и статистики
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, BigInteger, JSON, DateTime, Float
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
-
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, BigInteger, JSON, DateTime, Float, Boolean
 
 class Analytics(BaseModel):
     """Analytics event"""
