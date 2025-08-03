@@ -13,7 +13,7 @@ from app.models.bot import Bot, BotStatus
 from app.schemas.user import UserCreate, UserUpdate, UserStats
 from app.services.base import BaseService
 from app.core.exceptions import UserNotFoundError, ValidationError
-
+from sqlalchemy import select, and_, func, or_
 logger = logging.getLogger(__name__)
 
 
