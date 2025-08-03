@@ -4,7 +4,8 @@ Core Configuration - централизованная конфигурация �
 
 import os
 from typing import Optional, List
-from pydantic import BaseSettings, PostgresDsn, validator
+from pydantic_settings import BaseSettings
+from pydantic import PostgresDsn, field_validator
 from functools import lru_cache
 
 
@@ -33,13 +34,15 @@ class Settings(BaseSettings):
     POSTGRES_PORT: str = "5432"
     DATABASE_URL: Optional[PostgresDsn] = None
     
-    @validator("DATABASE_URL", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: dict) -> str:
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: Optional[str], info) -> str:
         if isinstance(v, str):
             return v
+        values = info.data if hasattr(info, 'data') else {}
         return PostgresDsn.build(
             scheme="postgresql+asyncpg",
-            user=values.get("POSTGRES_USER"),
+            username=values.get("POSTGRES_USER"),
             password=values.get("POSTGRES_PASSWORD"),
             host=values.get("POSTGRES_SERVER"),
             port=values.get("POSTGRES_PORT"),
@@ -71,7 +74,8 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "https://localhost:3000"]
     
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: str | List[str]) -> List[str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -92,7 +96,7 @@ class Settings(BaseSettings):
     ENABLE_ANALYTICS: bool = True
     ENABLE_UTM_TRACKING: bool = True
     ENABLE_RATE_LIMITING: bool = True
-    
+
     class Config:
         env_file = ".env"
         case_sensitive = True
