@@ -4,7 +4,7 @@ Message Schemas - Pydantic схемы для сообщений
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, validator, HttpUrl
+from pydantic import BaseModel, field_validator, HttpUrl
 from app.models.message import MessageType, MessageStatus
 
 
@@ -55,17 +55,21 @@ class Message(MessageInDB):
     is_sent: bool
     is_scheduled: bool
     
-    @validator("is_sent", pre=True, always=True)
-    def set_is_sent(cls, v, values):
+    @field_validator("is_sent", mode="before")
+    @classmethod
+    def set_is_sent(cls, v, info):
         if v is not None:
             return v
+        values = info.data if hasattr(info, 'data') else {}
         status = values.get("status")
         return status == MessageStatus.SENT.value
     
-    @validator("is_scheduled", pre=True, always=True)
-    def set_is_scheduled(cls, v, values):
+    @field_validator("is_scheduled", mode="before")
+    @classmethod
+    def set_is_scheduled(cls, v, info):
         if v is not None:
             return v
+        values = info.data if hasattr(info, 'data') else {}
         scheduled_at = values.get("scheduled_at")
         status = values.get("status")
         return scheduled_at is not None and status == MessageStatus.SCHEDULED.value
@@ -79,10 +83,14 @@ class BroadcastButton(BaseModel):
     row: int = 0
     column: int = 0
     
-    @validator("url", "callback_data")
-    def validate_button_action(cls, v, values, field):
-        url = values.get("url") if field.name == "callback_data" else v
-        callback_data = values.get("callback_data") if field.name == "url" else v
+    @field_validator("url", "callback_data")
+    @classmethod
+    def validate_button_action(cls, v, info):
+        field_name = info.field_name
+        values = info.data if hasattr(info, 'data') else {}
+        
+        url = values.get("url") if field_name == "callback_data" else v
+        callback_data = values.get("callback_data") if field_name == "url" else v
         
         if not url and not callback_data:
             raise ValueError("Button must have either URL or callback_data")
@@ -145,18 +153,22 @@ class Broadcast(BroadcastInDB):
     is_completed: bool
     buttons: Optional[List[BroadcastButton]] = None
     
-    @validator("success_rate", pre=True, always=True)
-    def set_success_rate(cls, v, values):
+    @field_validator("success_rate", mode="before")
+    @classmethod
+    def set_success_rate(cls, v, info):
         if v is not None:
             return v
+        values = info.data if hasattr(info, 'data') else {}
         total = values.get("total_recipients", 0)
         successful = values.get("successful_sends", 0)
         return (successful / total * 100) if total > 0 else 0.0
     
-    @validator("is_completed", pre=True, always=True)
-    def set_is_completed(cls, v, values):
+    @field_validator("is_completed", mode="before")
+    @classmethod
+    def set_is_completed(cls, v, info):
         if v is not None:
             return v
+        values = info.data if hasattr(info, 'data') else {}
         status = values.get("status")
         return status in [MessageStatus.SENT.value, MessageStatus.FAILED.value, MessageStatus.CANCELLED.value]
 
