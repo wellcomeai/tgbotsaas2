@@ -268,4 +268,122 @@ class MessageService(BaseService):
         logger.info(f"Cancelled broadcast {broadcast_id}")
         return broadcast
     
-    async def get_scheduled_broadcasts(self, db: AsyncSession) -> List
+    async def get_scheduled_broadcasts(self, db: AsyncSession) -> List[Broadcast]:
+        """Get broadcasts scheduled to be sent"""
+        now = datetime.utcnow()
+        
+        query = (
+            select(Broadcast)
+            .where(
+                and_(
+                    Broadcast.status == MessageStatus.SCHEDULED.value,
+                    Broadcast.scheduled_at <= now
+                )
+            )
+            .order_by(Broadcast.scheduled_at)
+        )
+        
+        result = await db.execute(query)
+        return result.scalars().all()
+    
+    async def get_message_stats(
+        self, 
+        db: AsyncSession, 
+        bot_id: int, 
+        days: int = 30
+    ) -> Dict[str, Any]:
+        """Get message statistics for bot"""
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        # Total messages
+        total_query = (
+            select(func.count(Message.id))
+            .where(
+                and_(
+                    Message.bot_id == bot_id,
+                    Message.created_at >= start_date
+                )
+            )
+        )
+        total_result = await db.execute(total_query)
+        total_messages = total_result.scalar()
+        
+        # Messages by type
+        by_type_query = (
+            select(Message.message_type, func.count(Message.id))
+            .where(
+                and_(
+                    Message.bot_id == bot_id,
+                    Message.created_at >= start_date
+                )
+            )
+            .group_by(Message.message_type)
+        )
+        by_type_result = await db.execute(by_type_query)
+        by_type = {row[0]: row[1] for row in by_type_result.fetchall()}
+        
+        # Unique recipients
+        unique_recipients_query = (
+            select(func.count(func.distinct(Message.recipient_id)))
+            .where(
+                and_(
+                    Message.bot_id == bot_id,
+                    Message.created_at >= start_date,
+                    Message.recipient_id.isnot(None)
+                )
+            )
+        )
+        unique_recipients_result = await db.execute(unique_recipients_query)
+        unique_recipients = unique_recipients_result.scalar()
+        
+        return {
+            "total_messages": total_messages,
+            "unique_recipients": unique_recipients,
+            "by_type": by_type,
+            "period_days": days
+        }
+    
+    async def _get_broadcast_recipients(
+        self, 
+        db: AsyncSession, 
+        broadcast: Broadcast
+    ) -> List[BotSubscriber]:
+        """Get recipients for broadcast based on targeting"""
+        query = (
+            select(BotSubscriber)
+            .where(
+                and_(
+                    BotSubscriber.bot_id == broadcast.bot_id,
+                    BotSubscriber.is_active == True
+                )
+            )
+        )
+        
+        # Apply targeting filters if specified
+        if broadcast.target_audience:
+            filters = broadcast.target_audience
+            
+            # Filter by UTM source
+            if "utm_source" in filters:
+                query = query.where(BotSubscriber.utm_source.in_(filters["utm_source"]))
+            
+            # Filter by join date
+            if "joined_after" in filters:
+                join_date = datetime.fromisoformat(filters["joined_after"])
+                query = query.where(BotSubscriber.joined_at >= join_date)
+            
+            # Filter by bot interaction
+            if "bot_started_only" in filters and filters["bot_started_only"]:
+                query = query.where(BotSubscriber.bot_started == True)
+            
+            # Filter by activity
+            if "active_days" in filters:
+                active_since = datetime.utcnow() - timedelta(days=filters["active_days"])
+                query = query.where(BotSubscriber.last_activity_at >= active_since)
+        
+        result = await db.execute(query)
+        return result.scalars().all()
+
+
+# Global instance
+message_service = MessageService()
