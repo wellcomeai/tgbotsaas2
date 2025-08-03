@@ -26,11 +26,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Database
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    # Database - сделаем поля опциональными если есть DATABASE_URL
+    POSTGRES_SERVER: Optional[str] = None
+    POSTGRES_USER: Optional[str] = None
+    POSTGRES_PASSWORD: Optional[str] = None
+    POSTGRES_DB: Optional[str] = None
     POSTGRES_PORT: str = "5432"
     DATABASE_URL: Optional[PostgresDsn] = None
     
@@ -39,15 +39,30 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], info) -> str:
         if isinstance(v, str):
             return v
+        
         values = info.data if hasattr(info, 'data') else {}
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            username=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            port=values.get("POSTGRES_PORT"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
-        )
+        
+        # Если DATABASE_URL не предоставлен, собираем из отдельных компонентов
+        if not v:
+            server = values.get("POSTGRES_SERVER")
+            user = values.get("POSTGRES_USER")
+            password = values.get("POSTGRES_PASSWORD")
+            db = values.get("POSTGRES_DB")
+            port = values.get("POSTGRES_PORT", "5432")
+            
+            if all([server, user, password, db]):
+                return PostgresDsn.build(
+                    scheme="postgresql+asyncpg",
+                    username=user,
+                    password=password,
+                    host=server,
+                    port=port,
+                    path=f"/{db}",
+                )
+            else:
+                raise ValueError("Either DATABASE_URL or all POSTGRES_* variables must be provided")
+        
+        return v
     
     # Redis (optional)
     REDIS_URL: Optional[str] = None
