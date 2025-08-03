@@ -5,7 +5,7 @@ Base Models - базовые модели для наследования
 from sqlalchemy import Column, Integer, DateTime, func
 from sqlalchemy.ext.declarative import declared_attr
 from app.core.database import Base
-
+from sqlalchemy import Column, Integer, DateTime, Boolean, func
 
 class TimestampMixin:
     """Mixin для добавления timestamp полей"""
