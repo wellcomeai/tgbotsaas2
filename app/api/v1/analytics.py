@@ -18,7 +18,7 @@ from app.schemas.analytics import (
 from app.schemas.user import User
 from app.api.v1.auth import get_current_user
 from app.core.exceptions import BotNotFoundError
-
+from app.telegram.bot_manager import bot_manager
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
