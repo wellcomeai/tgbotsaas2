@@ -2,7 +2,7 @@
 User Models - модели пользователей
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, BigInteger, Text
+from sqlalchemy import Column, Integer, String, Boolean, BigInteger, Text, DateTime
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
