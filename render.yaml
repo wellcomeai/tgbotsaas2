@@ -5,6 +5,7 @@ services:
     buildCommand: |
       pip install --upgrade pip &&
       pip install -r requirements.txt &&
+      python scripts/check_config.py &&
       python scripts/migrate.py
     startCommand: python scripts/start.py
     envVars:
