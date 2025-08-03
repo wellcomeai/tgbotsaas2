@@ -4,7 +4,7 @@ Bot Schemas - Pydantic схемы для ботов
 
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, validator, HttpUrl
+from pydantic import BaseModel, field_validator, HttpUrl
 from app.models.bot import BotStatus
 
 
@@ -27,13 +27,15 @@ class BotCreate(BotBase):
     """Schema for creating bot"""
     bot_token: str
     
-    @validator("bot_token")
+    @field_validator("bot_token")
+    @classmethod
     def validate_bot_token(cls, v):
         if ":" not in v or len(v.split(":")) != 2:
             raise ValueError("Invalid bot token format")
         return v
     
-    @validator("bot_username")
+    @field_validator("bot_username")
+    @classmethod
     def validate_bot_username(cls, v):
         if not v.endswith("bot"):
             raise ValueError("Bot username must end with 'bot'")
@@ -78,17 +80,21 @@ class Bot(BotInDB):
     is_active: bool
     telegram_link: str
     
-    @validator("is_active", pre=True, always=True)
-    def set_is_active(cls, v, values):
+    @field_validator("is_active", mode="before")
+    @classmethod
+    def set_is_active(cls, v, info):
         if v is not None:
             return v
+        values = info.data if hasattr(info, 'data') else {}
         status = values.get("status")
         return status == BotStatus.ACTIVE.value
     
-    @validator("telegram_link", pre=True, always=True)
-    def set_telegram_link(cls, v, values):
+    @field_validator("telegram_link", mode="before")
+    @classmethod
+    def set_telegram_link(cls, v, info):
         if v:
             return v
+        values = info.data if hasattr(info, 'data') else {}
         username = values.get("bot_username")
         return f"https://t.me/{username}" if username else ""
 
@@ -130,10 +136,12 @@ class BotSubscriber(BaseModel):
     joined_at: datetime
     display_name: str
     
-    @validator("display_name", pre=True, always=True)
-    def set_display_name(cls, v, values):
+    @field_validator("display_name", mode="before")
+    @classmethod
+    def set_display_name(cls, v, info):
         if v:
             return v
+        values = info.data if hasattr(info, 'data') else {}
         first_name = values.get("first_name")
         last_name = values.get("last_name")
         username = values.get("username")
